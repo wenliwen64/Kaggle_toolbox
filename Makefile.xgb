@@ -1,0 +1,29 @@
+include Makefile.feature.feature0
+
+N_ESTIMATORS = 400
+MAX_DEPTH = 8
+LEARNING_RATE = 0.05
+#TODO...
+
+PREDICT_VAL := $(DIR_VAL)/$(MODEL_NAME).val.y
+PREDICT_TEST := $(DIR_TEST)/$(MODEL_NAME).test.y
+SUBMISSION_TEST := $(DIR_TEST)/$(MODEL_NAME).sub.csv
+
+#all: validation submission
+#validation: $(METRIC_VAL)
+#submission: $(SUBMISSION_TEST)
+#retrain: clean_$(CLF_NAME) submission
+
+CLF_NAME := xgb_$(N_ESTIMATORS)_$(MAX_DEPTH)_$(LEARNING_RATE)
+MODEL_NAME := $(CLF_NAME)_$(FEATURE_NAME)
+
+$(PREDICT_TEST) $(PREDICT_VAL): $(FEATURE_TRAIN) $(FEATURE_TEST) | $(DIR_VAL) $(DIR_TEST)
+    echo $(MODEL_NAME)
+    src/train_predict_xg.py --train-file $< --test-file $(word 2, $^) --predict-valid-file $(PREDICT_VAL) --predict-test-file $(PREDICT_TEST)
+
+$(SUBMISSION_TEST): $(PREDICT_TEST) $(ID_TEST)
+    paste -d, $(lastword, $^) > $@
+
+param_tuning:
+    src/train_predict_xgb.py --train-file $(FEATURE_TRAIN) --grid-search
+    src/train_predict_xgb.py --train-file $(FEATURE_TRAIN) --rand-search
