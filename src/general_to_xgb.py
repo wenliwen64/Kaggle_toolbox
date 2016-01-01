@@ -14,8 +14,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    #predictors = self.predictors_after_encoding
-    #if dataset == 'train':
     df_train = pd.read_csv(args.train_input_file)
     df_test = pd.read_csv(args.test_input_file)
     predictors = df_test.keys().tolist()

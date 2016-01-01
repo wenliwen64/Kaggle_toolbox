@@ -1,29 +1,64 @@
 include Makefile.feature.feature0
+#DIR_RAW_DATA := raw_data
+#DIR_BUILD := build
+#DIR_FEATURE := $(DIR_BUILD)/feature# features after feature-engineering
+#DIR_VAL := $(DIR_BUILD)/val# training predictions
+#DIR_TEST := $(DIR_BUILD)/test# test predictions
 
-N_ESTIMATORS = 400
+#TRAIN_RAW_DATA := $(DIR_RAW_DATA)/train.csv
+#TEST_RAW_DATA := $(DIR_RAW_DATA)/test.csv
+
+#TRAIN_TARGET := $(DIR_RAW_DATA)/train.y
+#TRAIN_ID := $(DIR_RAW_DATA)/train.id
+#TEST_ID := $(DIR_RAW_DATA)/test.id
+
+#=====================================
+#FEATURE_NAME := feature0#TODO
+
+# feature files for general use and input for further data preparation
+#TRAIN_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).train.feature
+#TEST_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).test.feature
+
+# feature files for xgb classifier use
+#TRAIN_XGB_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).xgb.train.feature
+#TEST_XGB_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).xgb.test.feature
+
+# feature files for factorization machine use
+#TRAIN_FM_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).fm.train.feature
+#TRAIN_FM_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).fm.test.feature
+
+#====================================MODEL
 MAX_DEPTH = 8
 LEARNING_RATE = 0.05
+GAMMA = 0.1
+SUBSAMPLE = 0.2
+COLSAMPLE_BYTREE = 0.5
+N_ESTIMATORS = 400
+
+CLF_NAME := xgb_$(MAX_DEPTH)_$(LEARNING_RATE)_$(GAMMA)_$(SUBSAMPLE)_$(COLSAMPLE_BYTREE)_$(N_ESTIMATORS)
+MODEL_NAME := $(CLF_NAME)_$(FEATURE_NAME)
 #TODO...
 
-PREDICT_VAL := $(DIR_VAL)/$(MODEL_NAME).val.y
-PREDICT_TEST := $(DIR_TEST)/$(MODEL_NAME).test.y
-SUBMISSION_TEST := $(DIR_TEST)/$(MODEL_NAME).sub.csv
+VAL_PREDICT := $(DIR_VAL)/$(MODEL_NAME).val.y
+VAL_SOFT_PREDICT := $(DIR_VAL)/$(MODEL_NAME).val.soft.y
+TEST_PREDICT := $(DIR_TEST)/$(MODEL_NAME).test.y
+TEST_SOFT_PREDICT := $(DIR_TEST)/$(MODEL_NAME).test.soft.y
+TEST_SUBMISSION := $(DIR_TEST)/$(MODEL_NAME).sub.csv
 
 #all: validation submission
 #validation: $(METRIC_VAL)
 #submission: $(SUBMISSION_TEST)
 #retrain: clean_$(CLF_NAME) submission
-
-CLF_NAME := xgb_$(N_ESTIMATORS)_$(MAX_DEPTH)_$(LEARNING_RATE)
-MODEL_NAME := $(CLF_NAME)_$(FEATURE_NAME)
-
-$(PREDICT_TEST) $(PREDICT_VAL): $(FEATURE_TRAIN) $(FEATURE_TEST) | $(DIR_VAL) $(DIR_TEST)
-    echo $(MODEL_NAME)
-    src/train_predict_xg.py --train-file $< --test-file $(word 2, $^) --predict-valid-file $(PREDICT_VAL) --predict-test-file $(PREDICT_TEST)
+train_predict: $(TEST_PREDICT) $(TEST_SOFT_PREDICT) $(VAL_PREDICT) $(VAL_SOFT_PREDICT)
+$(TEST_PREDICT) $(TEST_SOFT_PREDICT) $(VAL_PREDICT) $(VAL_SOFT_PREDICT): $(TRAIN_FEATURE) $(TEST_FEATURE) $(TRAIN_XGB_FEATURE) $(TEST_XGB_FEATURE)| $(DIR_VAL) $(DIR_TEST) src/train_predict_xgb.py
+	echo $(MODEL)
+	python src/train_predict_xgb.py --train-file $(TRAIN_FEATURE) --train-y-file $(TRAIN_TARGET) --test-file $(TEST_FEATURE) --train-dmatrix $(TRAIN_XGB_FEATURE) --test-dmatrix $(TEST_XGB_FEATURE) --val-predict-file $(VAL_PREDICT) --val-soft-predict-file $(VAL_SOFT_PREDICT) --test-predict-file $(TEST_PREDICT) --test-soft-predict-file $(TEST_SOFT_PREDICT) --train-id-file $(TRAIN_ID) --test-id-file $(TEST_ID) --cv 3
 
 $(SUBMISSION_TEST): $(PREDICT_TEST) $(ID_TEST)
-    paste -d, $(lastword, $^) > $@
+	paste -d, $(lastword, $^) > $@
 
-param_tuning:
-    src/train_predict_xgb.py --train-file $(FEATURE_TRAIN) --grid-search
-    src/train_predict_xgb.py --train-file $(FEATURE_TRAIN) --rand-search
+param_tuning_grid:
+	python src/train_predict_xgb.py --train-file $(TRAIN_FEATURE) --train-y-file $(TRAIN_TARGET) --test-file $(TEST_FEATURE) --train-dmatrix $(TRAIN_XGB_FEATURE) --test-dmatrix $(TEST_XGB_FEATURE) --val-predict-file $(VAL_PREDICT) --val-soft-predict-file $(VAL_SOFT_PREDICT) --test-predict-file $(TEST_PREDICT) --test-soft-predict-file $(TEST_SOFT_PREDICT) --train-id-file $(TRAIN_ID) --test-id-file $(TEST_ID) --grid-search --cv 3
+
+param_tuning_rand:
+	python src/train_predict_xgb.py --train-file $(TRAIN_FEATURE) --train-y-file $(TRAIN_TARGET) --test-file $(TEST_FEATURE) --train-dmatrix $(TRAIN_XGB_FEATURE) --test-dmatrix $(TEST_XGB_FEATURE) --val-predict-file $(VAL_PREDICT) --val-soft-predict-file $(VAL_SOFT_PREDICT) --test-predict-file $(TEST_PREDICT) --test-soft-predict-file $(TEST_SOFT_PREDICT) --train-id-file $(TRAIN_ID) --test-id-file $(TEST_ID) --rand-search --cv 3

@@ -1,37 +1,26 @@
-DIR_RAW_DATA := raw_data
-DIR_BUILD := build
-DIR_FEATURE := $(DIR_BUILD)/feature# features after feature-engineering
-DIR_VAL := $(DIR_BUILD)/val# training predictions
-DIR_TEST_RESULT := $(DIR_BUILD)/test# test predictions
+include Makefile
+TRAIN_TARGET:= $(DIR_RAW_DATA)/train.y
 
-RAW_DATA_TRAIN := $(DIR_RAW_DATA)/train.csv
-RAW_DATA_TEST := $(DIR_RAW_DATA)/test.csv
-
-TARGET_TRAIN := $(DIR_RAW_DATA)/train.y
-
-
-FEATURE_NAME := feature0
+FEATURE_NAME := feature0#TODO
 
 # feature files for general use and input for further data preparation
-FEATURE_TRAIN := $(DIR_FEATURE)/$(FEATURE_NAME).train.feature
-FEATURE_TEST := $(DIR_FEATURE)/$(FEATURE_NAME).test.feature
+TRAIN_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).train.feature
+TEST_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).test.feature
 
 # feature files for xgb classifier use
-FEATURE_XGB_TRAIN := $(DIR_FEATURE)/$(FEATURE_NAME).xgb.train.feature
-FEATURE_XGB_TEST := $(DIR_FEATURE)/$(FEATURE_NAME).xgb.test.feature
+TRAIN_XGB_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).xgb.train.feature
+TEST_XGB_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).xgb.test.feature
 
 # feature files for factorization machine use
-FEATURE_FM_TRAIN := $(DIR_FEATURE)/$(FEATURE_NAME).fm.train.feature
-FEATURE_FM_TEST := $(DIR_FEATURE)/$(FEATURE_NAME).fm.test.feature
+TRAIN_FM_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).fm.train.feature
+TRAIN_FM_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).fm.test.feature
 
+feature: $(TRAIN_FEATURE) $(TEST_FEATURE) $(TRAIN_XGB_FEATURE) $(TEST_XGB_FEATURE)
+$(TRAIN_FEATURE) $(TEST_FEATURE): $(TRAIN_RAW_DATA) $(TEST_RAW_DATA) | $(DIR_FEATURE) src/generate_$(FEATURE_NAME).py
+	python src/generate_$(FEATURE_NAME).py --train-file $< --test-file $(lastword $^) --train-feature-file $(TRAIN_FEATURE) --test-feature-file $(TEST_FEATURE)
 
-$(FEATURE_TRAIN) $(FEATURE_TEST): $(RAW_DATA_TRAIN) $(RAW_DATA_TEST) | $(DIR_FEATURE) src/generate_$(FEATURE_NAME).py
-	echo 'HAPPY'
-	python src/generate_$(FEATURE_NAME).py --train-file $< --test-file $(lastword $^) --train-feature-file $(FEATURE_TRAIN) --test-feature-file $(FEATURE_TEST)
+$(TRAIN_XGB_FEATURE) $(TEST_XGB_FEATURE): $(TRAIN_FEATURE) $(TEST_FEATURE) | $(DIR_FEATURE) src/general_to_xgb.py
+	python src/general_to_xgb.py --train-input-file $< --test-input-file $(lastword $^) --train-output-file $(TRAIN_XGB_FEATURE) --test-output-file $(TEST_XGB_FEATURE) 
 
-$(FEATURE_XGB_TRAIN) $(FEATURE_XGB_TEST): $(FEATURE_TRAIN) $(FEATURE_TEST) | $(DIR_FEATURE) src/general_to_xgb.py
-	python src/general_to_xgb.py --train-input-file $< --test-input-file $(lastword $^) --train-output-file $(FEATURE_XGB_TRAIN) --test-output-file $(FEATURE_XGB_TEST) 
-
-all: $(FEATURE_TRAIN) $(FEATURE_TEST) $(FEATURE_XGB_TRAIN) $(FEATURE_XGB_TEST)
 clean: 
 	rm build/feature/*feature0*
