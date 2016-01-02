@@ -7,6 +7,7 @@ import re
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate feature0...')
+    parser.add_argument('--train-target', action='store', dest='train_target', help='train_target')
     parser.add_argument('--train-input-file', action='store', dest='train_input_file', help='trainning_file')
     parser.add_argument('--test-input-file', action='store', dest='test_input_file', help='testing_file')
     parser.add_argument('--train-output-file', action='store', dest='train_output_file', help='trainning_feature_file')
@@ -15,6 +16,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     df_train = pd.read_csv(args.train_input_file)
+    df_train_target = pd.read_csv(args.train_target)
     df_test = pd.read_csv(args.test_input_file)
     predictors = df_test.keys().tolist()
     print(predictors)
@@ -23,7 +25,7 @@ if __name__ == '__main__':
     ftest = open(args.test_output_file, 'w')
 
     for i in range(df_train.shape[0]):
-        ftrain.write('{} '.format(df_train['Survived'].iloc[i])) # target variable
+        ftrain.write('{} '.format(df_train_target.values.tolist()[i][0])) # target variable#TODO
         for j in range(len(predictors)):
             ftrain.write('{0}:{1} '.format(j, df_train[predictors[j]].iloc[i]))
         ftrain.write('\n')

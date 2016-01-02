@@ -90,7 +90,7 @@ if __name__ == '__main__':
         predictions_proba = predictions.copy()
         predictions[predictions >= .5] = 1 
         predictions[predictions < .5] = 0 
-        predictions = [int(x) for x in predictions.tolist()] #TODO
+        predictions = [int(x) for x in predictions.tolist()] #Otherwise will be provided float
 
         submission_test = pd.DataFrame({
 	    #'PassengerId': test_id_df,
@@ -105,7 +105,7 @@ if __name__ == '__main__':
         submission_proba_test.to_csv(args.test_soft_predict_file, index=False)
 
 #==================Cross Validation========================================
-        kf = KFold(train_df.shape[1], n_folds=args.n_cv, random_state=1)
+        kf = KFold(train_df.shape[0], n_folds=args.n_cv, random_state=1)
        
         predictions = []
         for train, test in kf:
@@ -117,10 +117,11 @@ if __name__ == '__main__':
 	predictions_proba = predictions.copy()
         predictions[predictions >= .5] = 1 
         predictions[predictions < .5] = 0 
+	predictions = [int(x) for x in predictions]
 
         submission_val = pd.DataFrame({
 	    #'PassengerId': train_id_df,
-	    'Survived': predictions
+	    'Survived': predictions,
 	    })
         submission_val.to_csv(args.val_predict_file, index=False)
 

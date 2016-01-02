@@ -50,7 +50,7 @@ TEST_SUBMISSION := $(DIR_TEST)/$(MODEL_NAME).sub.csv
 #submission: $(SUBMISSION_TEST)
 #retrain: clean_$(CLF_NAME) submission
 train_predict: $(TEST_PREDICT) $(TEST_SOFT_PREDICT) $(VAL_PREDICT) $(VAL_SOFT_PREDICT)
-$(TEST_PREDICT) $(TEST_SOFT_PREDICT) $(VAL_PREDICT) $(VAL_SOFT_PREDICT): $(TRAIN_FEATURE) $(TEST_FEATURE) $(TRAIN_XGB_FEATURE) $(TEST_XGB_FEATURE)| $(DIR_VAL) $(DIR_TEST) src/train_predict_xgb.py
+$(TEST_PREDICT) $(TEST_SOFT_PREDICT) $(VAL_PREDICT) $(VAL_SOFT_PREDICT): $(TRAIN_FEATURE) $(TEST_FEATURE) $(TRAIN_XGB_FEATURE) $(TEST_XGB_FEATURE) $(DIR_VAL) $(DIR_TEST) src/train_predict_xgb.py
 	echo $(MODEL)
 	python src/train_predict_xgb.py --train-file $(TRAIN_FEATURE) --train-y-file $(TRAIN_TARGET) --test-file $(TEST_FEATURE) --train-dmatrix $(TRAIN_XGB_FEATURE) --test-dmatrix $(TEST_XGB_FEATURE) --val-predict-file $(VAL_PREDICT) --val-soft-predict-file $(VAL_SOFT_PREDICT) --test-predict-file $(TEST_PREDICT) --test-soft-predict-file $(TEST_SOFT_PREDICT) --train-id-file $(TRAIN_ID) --test-id-file $(TEST_ID) --cv 3
 

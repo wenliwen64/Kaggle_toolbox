@@ -78,7 +78,7 @@ if __name__ == '__main__':
     matrix_after_encoding_train = np.hstack((matrix_num_train, vect_cat_train)) 
 
     df_after_encoding_train = pd.DataFrame(matrix_after_encoding_train)
-    df_after_encoding_train['Survived'] = df_train['Survived']
+    #df_after_encoding_train['Survived'] = df_train['Survived']
     df_after_encoding_train.to_csv(args.train_feature_file, index=False)
             
     matrix_cat_test = df_test[['Sex', 'Embarked', 'Titles']].copy().T.to_dict().values()

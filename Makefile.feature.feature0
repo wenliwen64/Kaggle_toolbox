@@ -15,12 +15,13 @@ TEST_XGB_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).xgb.test.feature
 TRAIN_FM_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).fm.train.feature
 TRAIN_FM_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).fm.test.feature
 
-feature: $(TRAIN_FEATURE) $(TEST_FEATURE) $(TRAIN_XGB_FEATURE) $(TEST_XGB_FEATURE)
-$(TRAIN_FEATURE) $(TEST_FEATURE): $(TRAIN_RAW_DATA) $(TEST_RAW_DATA) | $(DIR_FEATURE) src/generate_$(FEATURE_NAME).py
-	python src/generate_$(FEATURE_NAME).py --train-file $< --test-file $(lastword $^) --train-feature-file $(TRAIN_FEATURE) --test-feature-file $(TEST_FEATURE)
+feature0: $(TRAIN_FEATURE) $(TEST_FEATURE) $(TRAIN_XGB_FEATURE) $(TEST_XGB_FEATURE)
 
-$(TRAIN_XGB_FEATURE) $(TEST_XGB_FEATURE): $(TRAIN_FEATURE) $(TEST_FEATURE) | $(DIR_FEATURE) src/general_to_xgb.py
-	python src/general_to_xgb.py --train-input-file $< --test-input-file $(lastword $^) --train-output-file $(TRAIN_XGB_FEATURE) --test-output-file $(TEST_XGB_FEATURE) 
+$(TRAIN_FEATURE) $(TEST_FEATURE): $(TRAIN_RAW_DATA) $(TEST_RAW_DATA) $(DIR_FEATURE) src/generate_$(FEATURE_NAME).py
+	python src/generate_$(FEATURE_NAME).py --train-file $< --test-file $(word 2, $^) --train-feature-file $(TRAIN_FEATURE) --test-feature-file $(TEST_FEATURE)
+
+$(TRAIN_XGB_FEATURE) $(TEST_XGB_FEATURE): $(TRAIN_FEATURE) $(TEST_FEATURE) $(DIR_FEATURE) src/general_to_xgb.py
+	python src/general_to_xgb.py --train-target $(TRAIN_TARGET) --train-input-file $< --test-input-file $(word 2, $^) --train-output-file $(TRAIN_XGB_FEATURE) --test-output-file $(TEST_XGB_FEATURE) 
 
 clean: 
 	rm build/feature/*feature0*

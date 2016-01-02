@@ -1,0 +1,28 @@
+# this has to have same interface to Makefile.xgb/Makefile.fm/Makefile.svm/Makefile.rf/Makefile.lr/Makefile.xrt/Makefile.knn/Makefile.nn
+include Makefile
+FEATURE_NAME := ens0
+EXT_FEATURE := feature0
+
+BASE_MODELS := xgb_8_0.05_0.1_0.2_0.5_400_feature0 \
+
+TRAIN_ENS_FEATURE_FILES := $(foreach m, $(BASE_MODELS), $(DIR_VAL)/$(m).val.y)
+TEST_ENS_FEATURE_FILES := $(foreach m, $(BASE_MODELS), $(DIR_TEST)/$(m).test.y)
+
+TRAIN_EXT_FEATURE_FILE := $(DIR_FEATURE)/$(EXT_FEATURE).train.feature
+TEST_EXT_FEATURE_FILE := $(DIR_FEATURE)/$(EXT_FEATURE).test.feature
+
+TRAIN_ENS_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).train.feature
+TEST_ENS_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).test.feature
+
+TRAIN_ENS_XGB_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).xgb.train.feature
+TEST_ENS_XGB_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).xgb.test.feature
+
+ens0: $(TRAIN_ENS_FEATURE) $(TEST_ENS_FEATURE) $(TRAIN_ENS_XGB_FEATURE) $(TEST_ENS_XGB_FEATURE)
+
+$(TRAIN_ENS_FEATURE) $(TEST_ENS_FEATURE): $(TRAIN_ENS_FEATURE_FILES) $(TEST_ENS_FEATURE_FILES) $(TRAIN_EXT_FEATURE_FILE) $(TEST_EXT_FEATURE_FILE) src/generate_$(FEATURE_NAME).py
+	python src/generate_$(FEATURE_NAME).py --val-ens-files $(TRAIN_ENS_FEATURE_FILES) --test-ens-files $(TEST_ENS_FEATURE_FILES) --val-ext-feature-file $(TRAIN_EXT_FEATURE_FILE) --test-ext-feature-file $(TEST_EXT_FEATURE_FILE) --train-ens-feature-file $(TRAIN_ENS_FEATURE) --test-ens-feature-file $(TEST_ENS_FEATURE)
+
+$(TRAIN_ENS_XGB_FEATURE) $(TEST_ENS_XGB_FEATURE): $(TRAIN_ENS_FEATURE) $(TEST_ENS_FEATURE) $(DIR_FEATURE) src/general_to_xgb.py
+	python src/general_to_xgb.py --train-target $(TRAIN_TARGET) --train-input-file $< --test-input-file $(word 2, $^) --train-output-file $(TRAIN_ENS_XGB_FEATURE) --test-output-file $(TEST_ENS_XGB_FEATURE) #TODO, use automatic variables
+
+
