@@ -1,4 +1,7 @@
 #!/usr/bin/python
+'''
+feature1: no onehotencoding
+'''
 import argparse
 import numpy as np
 import pandas as pd 
@@ -28,7 +31,7 @@ def generate_new_features(dataset=None):  # DONE!!!
 
     ds = dataset
     family_id_mapping = {}
-    ds['FamilySize'] = ds['SibSp'] + ds['Parch'] 
+    ds['FamilySize'] = ds['SibSp'] 
     ds['NameLength'] = ds['Name'].apply(lambda x: len(x))
     titles = ds['Name'].apply(get_title)
     print('titles:')
@@ -36,7 +39,7 @@ def generate_new_features(dataset=None):  # DONE!!!
     title_mapping = {'Mr': 1, 'Miss': 2, 'Mrs': 3, 'Master': 4, 'Dr': 5, 'Rev': 6, 'Col': 7, 'Major': 8, 'Mlle': 9, 'Countess': 10, 'Ms': 11, 'Lady': 12, 'Jonkheer': 13, 'Don': 14, 'Mme': 15, 'Capt': 16, 'Sir': 17, 'Dona':18}
 
     for k, v in title_mapping.items():
-	titles[titles == k] = k 
+	titles[titles == k] = v 
 
     ds['Titles'] = titles
 
@@ -60,35 +63,23 @@ if __name__ == '__main__':
         ds.loc[(ds['Age'].isnull()) & (ds['SibSp']<2) & (ds['Sex']=='male'), 'Age'] =30 
         ds.loc[(ds['Age'].isnull()) & (ds['SibSp']<2) & (ds['Sex']=='female'), 'Age'] =29 
 
+	ds.loc[ds['Sex']=='male', 'Sex'] = 0 
+	ds.loc[ds['Sex']=='female', 'Sex'] = 1 
+        ds['Embarked'] = ds['Embarked'].fillna('S')
+
+        ds.loc[ds['Embarked']=='S', 'Embarked'] = 0 
+        ds.loc[ds['Embarked']=='C', 'Embarked'] = 1 
+        ds.loc[ds['Embarked']=='Q', 'Embarked'] = 2 
+
+	ds['Fare'] = ds['Fare'].fillna(ds['Fare'].median())  # only for test dataset in this case, or we can use kde 
+
+
 #========================
-    df_train['Embarked'] = df_train['Embarked'].fillna('S')
-    df_test['Embarked'] = df_test['Embarked'].fillna('S')
-
-    df_test['Fare'] = df_test['Fare'].fillna(df_train['Fare'].median()) 
-
     df_train = generate_new_features(df_train)
     df_test = generate_new_features(df_test)
-#====================== One-Hot-Encoding
-    matrix_cat_train = df_train[['Sex', 'Embarked', 'Titles']].copy().T.to_dict().values()
-    vectorizer = DV(sparse=False)
-    vect_cat_train = vectorizer.fit_transform(matrix_cat_train)
-    print(vect_cat_train)
 
-    matrix_num_train = df_train[['Pclass', 'Age', 'Fare', 'FamilySize']].as_matrix()
-
-    matrix_after_encoding_train = np.hstack((matrix_num_train, vect_cat_train)) 
-
-    df_after_encoding_train = pd.DataFrame(matrix_after_encoding_train)
-    #df_after_encoding_train['Survived'] = df_train['Survived']
-    df_after_encoding_train.to_csv(args.train_feature_file, index=False)
-            
-    matrix_cat_test = df_test[['Sex', 'Embarked', 'Titles']].copy().T.to_dict().values()
-    matrix_num_test = df_test[['Pclass', 'Age', 'Fare', 'FamilySize']].as_matrix()
-
-    vectorizer = DV(sparse=False)
-    matrix_train_cat = vectorizer.fit_transform(matrix_cat_train)
-    vect_cat_test = vectorizer.transform(matrix_cat_test)
-
-    matrix_after_encoding_test = np.hstack((matrix_num_test, vect_cat_test))
-    df_after_encoding_test = pd.DataFrame(matrix_after_encoding_test)
-    df_after_encoding_test.to_csv(args.test_feature_file, index=False)
+    predictors = ["Pclass", "Sex", "Age", "Fare", "Embarked", "FamilySize", "Titles"]
+    df_train = df_train[predictors]
+    df_test = df_test[predictors]
+    df_train.to_csv(args.train_feature_file, index=False)
+    df_test.to_csv(args.test_feature_file, index=False)

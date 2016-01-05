@@ -24,5 +24,3 @@ $(TRAIN_ENS_FEATURE) $(TEST_ENS_FEATURE): $(TRAIN_ENS_FEATURE_FILES) $(TEST_ENS_
 
 $(TRAIN_ENS_XGB_FEATURE) $(TEST_ENS_XGB_FEATURE): $(TRAIN_ENS_FEATURE) $(TEST_ENS_FEATURE) $(DIR_FEATURE) src/general_to_xgb.py
 	python src/general_to_xgb.py --train-target $(TRAIN_TARGET) --train-input-file $< --test-input-file $(word 2, $^) --train-output-file $(TRAIN_ENS_XGB_FEATURE) --test-output-file $(TEST_ENS_XGB_FEATURE) #TODO, use automatic variables
-
-

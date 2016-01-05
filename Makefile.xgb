@@ -1,39 +1,13 @@
+#include Makefile.feature.feature0
 include Makefile.feature.feature0
-#DIR_RAW_DATA := raw_data
-#DIR_BUILD := build
-#DIR_FEATURE := $(DIR_BUILD)/feature# features after feature-engineering
-#DIR_VAL := $(DIR_BUILD)/val# training predictions
-#DIR_TEST := $(DIR_BUILD)/test# test predictions
-
-#TRAIN_RAW_DATA := $(DIR_RAW_DATA)/train.csv
-#TEST_RAW_DATA := $(DIR_RAW_DATA)/test.csv
-
-#TRAIN_TARGET := $(DIR_RAW_DATA)/train.y
-#TRAIN_ID := $(DIR_RAW_DATA)/train.id
-#TEST_ID := $(DIR_RAW_DATA)/test.id
-
-#=====================================
-#FEATURE_NAME := feature0#TODO
-
-# feature files for general use and input for further data preparation
-#TRAIN_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).train.feature
-#TEST_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).test.feature
-
-# feature files for xgb classifier use
-#TRAIN_XGB_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).xgb.train.feature
-#TEST_XGB_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).xgb.test.feature
-
-# feature files for factorization machine use
-#TRAIN_FM_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).fm.train.feature
-#TRAIN_FM_FEATURE := $(DIR_FEATURE)/$(FEATURE_NAME).fm.test.feature
-
 #====================================MODEL
-MAX_DEPTH = 8
-LEARNING_RATE = 0.05
-GAMMA = 0.1
-SUBSAMPLE = 0.2
-COLSAMPLE_BYTREE = 0.5
-N_ESTIMATORS = 400
+#10_0.1_0_0.5_0.4_80 - 0.847(.023)
+MAX_DEPTH = 10
+LEARNING_RATE = 0.1
+GAMMA = 0
+SUBSAMPLE = 0.5
+COLSAMPLE_BYTREE = 0.4
+N_ESTIMATORS = 80
 
 CLF_NAME := xgb_$(MAX_DEPTH)_$(LEARNING_RATE)_$(GAMMA)_$(SUBSAMPLE)_$(COLSAMPLE_BYTREE)_$(N_ESTIMATORS)
 MODEL_NAME := $(CLF_NAME)_$(FEATURE_NAME)
@@ -49,16 +23,22 @@ TEST_SUBMISSION := $(DIR_TEST)/$(MODEL_NAME).sub.csv
 #validation: $(METRIC_VAL)
 #submission: $(SUBMISSION_TEST)
 #retrain: clean_$(CLF_NAME) submission
+#TODO:
 train_predict: $(TEST_PREDICT) $(TEST_SOFT_PREDICT) $(VAL_PREDICT) $(VAL_SOFT_PREDICT)
 $(TEST_PREDICT) $(TEST_SOFT_PREDICT) $(VAL_PREDICT) $(VAL_SOFT_PREDICT): $(TRAIN_FEATURE) $(TEST_FEATURE) $(TRAIN_XGB_FEATURE) $(TEST_XGB_FEATURE) $(DIR_VAL) $(DIR_TEST) src/train_predict_xgb.py
 	echo $(MODEL)
-	python src/train_predict_xgb.py --train-file $(TRAIN_FEATURE) --train-y-file $(TRAIN_TARGET) --test-file $(TEST_FEATURE) --train-dmatrix $(TRAIN_XGB_FEATURE) --test-dmatrix $(TEST_XGB_FEATURE) --val-predict-file $(VAL_PREDICT) --val-soft-predict-file $(VAL_SOFT_PREDICT) --test-predict-file $(TEST_PREDICT) --test-soft-predict-file $(TEST_SOFT_PREDICT) --train-id-file $(TRAIN_ID) --test-id-file $(TEST_ID) --cv 3
+	python src/train_predict_xgb.py --train-file $(TRAIN_FEATURE) --train-y-file $(TRAIN_TARGET) --test-file $(TEST_FEATURE) --train-dmatrix $(TRAIN_XGB_FEATURE) --test-dmatrix $(TEST_XGB_FEATURE) --val-predict-file $(VAL_PREDICT) --val-soft-predict-file $(VAL_SOFT_PREDICT) --test-predict-file $(TEST_PREDICT) --test-soft-predict-file $(TEST_SOFT_PREDICT) --train-id-file $(TRAIN_ID) --test-id-file $(TEST_ID) --cv 3 --max-depth $(MAX_DEPTH) --learning-rate $(LEARNING_RATE) --colsample-bytree $(COLSAMPLE_BYTREE) --n-estimators $(N_ESTIMATORS) --subsample $(SUBSAMPLE) --gamma $(GAMMA)
 
 $(SUBMISSION_TEST): $(PREDICT_TEST) $(ID_TEST)
 	paste -d, $(lastword, $^) > $@
 
+#TODO
 param_tuning_grid:
 	python src/train_predict_xgb.py --train-file $(TRAIN_FEATURE) --train-y-file $(TRAIN_TARGET) --test-file $(TEST_FEATURE) --train-dmatrix $(TRAIN_XGB_FEATURE) --test-dmatrix $(TEST_XGB_FEATURE) --val-predict-file $(VAL_PREDICT) --val-soft-predict-file $(VAL_SOFT_PREDICT) --test-predict-file $(TEST_PREDICT) --test-soft-predict-file $(TEST_SOFT_PREDICT) --train-id-file $(TRAIN_ID) --test-id-file $(TEST_ID) --grid-search --cv 3
 
+#TODO
 param_tuning_rand:
 	python src/train_predict_xgb.py --train-file $(TRAIN_FEATURE) --train-y-file $(TRAIN_TARGET) --test-file $(TEST_FEATURE) --train-dmatrix $(TRAIN_XGB_FEATURE) --test-dmatrix $(TEST_XGB_FEATURE) --val-predict-file $(VAL_PREDICT) --val-soft-predict-file $(VAL_SOFT_PREDICT) --test-predict-file $(TEST_PREDICT) --test-soft-predict-file $(TEST_SOFT_PREDICT) --train-id-file $(TRAIN_ID) --test-id-file $(TEST_ID) --rand-search --cv 3
+
+submission:
+	paste -d, $(TEST_ID)	$(TEST_PREDICT) > $(TEST_SUBMISSION)

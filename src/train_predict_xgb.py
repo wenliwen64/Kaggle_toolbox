@@ -35,6 +35,12 @@ if __name__ == '__main__':
     parser.add_argument('--grid-search', action='store_true', dest='grid_search', help='turn on to do grid search for optimized hyperparameters')
     parser.add_argument('--rand-search', action='store_true', dest='rand_search', help='turn on to do randomized search for optimized hyperparameters')
     parser.add_argument('--cv', action='store', dest='n_cv', type=int, help='number of cross-validation folds')
+    parser.add_argument('--max-depth', action='store', dest='max_depth', type=int, help='max depth')
+    parser.add_argument('--learning-rate', action='store', dest='learning_rate', type=float, help='learning rate')
+    parser.add_argument('--gamma', action='store', dest='gamma', type=float, help='gamma')
+    parser.add_argument('--subsample', action='store', dest='subsample', type=float, help='subsample rate')
+    parser.add_argument('--colsample-bytree', action='store', dest='colsample_bytree', type=float, help='colsample_bytree rate')
+    parser.add_argument('--n-estimators', action='store', dest='n_estimators', type=int, help='n_estimators')
     args = parser.parse_args()
 
     train_df = pd.read_csv(args.train_file)
@@ -81,10 +87,10 @@ if __name__ == '__main__':
 	grid_search.fit(train_df[predictors], train_y_df['Survived'])
 
         print('========xgb grid search results============')
-	report(random_search.grid_scores_)
+	report(grid_search.grid_scores_)
 
     else:
-        params = {'max_depth': 9, 'learning_rate': 0.1, 'colsample_bytree': 0.5, 'n_estimators': 75, 'subsample': .5, 'gamma': 0.3, 'objective':'binary:logistic', 'eval_metric': 'auc'} #0.845, cv=3 
+        params = {'max_depth': args.max_depth, 'learning_rate': args.learning_rate, 'colsample_bytree': args.colsample_bytree, 'n_estimators': args.n_estimators, 'subsample': args.subsample, 'gamma': args.gamma, 'objective':'binary:logistic', 'eval_metric': 'auc'} #0.845, cv=3 
         bst = xgb.train(params, train_dmatrix)
         predictions = pd.Series(bst.predict(test_dmatrix))
         predictions_proba = predictions.copy()
